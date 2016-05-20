@@ -8,10 +8,10 @@ import (
 
 type StoppableListener struct {
 	*net.TCPListener
-	chstop chan struct{}
+	chStop chan struct{}
 }
 
-func New(l net.Listener) (*StoppableListener, error) {
+func NewStoppableListener(l net.Listener) (*StoppableListener, error) {
 	tcpL, ok := l.(*net.TCPListener)
 
 	if !ok {
@@ -24,14 +24,13 @@ func New(l net.Listener) (*StoppableListener, error) {
 var ErrStopped = errors.New("listener stopped")
 
 func (sl *StoppableListener) Accept() (net.Conn, error) {
-
 	for {
 		sl.SetDeadline(time.Now().Add(time.Second))
 
 		conn, err := sl.TCPListener.Accept()
 
 		select {
-		case <-sl.chstop:
+		case <-sl.chStop:
 			return nil, ErrStopped
 		default:
 		}
@@ -48,5 +47,5 @@ func (sl *StoppableListener) Accept() (net.Conn, error) {
 }
 
 func (sl *StoppableListener) Stop() {
-	close(sl.chstop)
+	close(sl.chStop)
 }

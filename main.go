@@ -3,35 +3,39 @@ package main
 import (
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 func main() {
 
-	// Listen on 127.0.0.1:48879.  That's my favorite port number because in
-	// hex 48879 is 0xBEEF.
-	laddr, err := net.ResolveTCPAddr("tcp", "127.0.0.1:48879")
-	if nil != err {
+	laddr, err := net.ResolveTCPAddr("tcp", "127.0.0.1:8888")
+	if err != nil {
 		log.Fatalln(err)
 	}
 	listener, err := net.ListenTCP("tcp", laddr)
-	if nil != err {
+	if err != nil {
 		log.Fatalln(err)
 	}
-	log.Println("listening on", listener.Addr())
+	stoppableListener, err := NewStoppableListener(listener)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	log.Println("listening on", stoppableListener.Addr())
 
-	// Make a new service and send it into the background.
-	service := NewService()
-	go service.Serve(listener)
+	go func() {
+		err := http.Serve(stoppableListener, &HTTPProxyHandler{})
+		log.Println(err)
+	}()
 
-	// Handle SIGINT and SIGTERM.
 	ch := make(chan os.Signal)
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
-	log.Println(<-ch)
+	log.Println("ok", <-ch)
 
-	// Stop the service gracefully.
-	service.Stop()
+	stoppableListener.Stop()
 
+	time.Sleep(time.Second)
 }
