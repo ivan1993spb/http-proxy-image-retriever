@@ -2,11 +2,13 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 )
 
 type HTTPProxyHandler struct {
+	logger *log.Logger
 }
 
 func (h *HTTPProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
