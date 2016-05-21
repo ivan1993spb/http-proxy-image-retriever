@@ -20,8 +20,28 @@ func (h *HTTPImageProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 	if r.Method == http.MethodGet {
 		if r.URL.Path == "/" {
 			if url := r.FormValue("url"); url != "" {
+				cn, ok := w.(http.CloseNotifier)
+				var stopChan chan struct{}
+				if ok {
+					stopChan = make(chan struct{})
+					go func() {
+						select {
+						case <-h.stopChan:
+							fmt.Println(1)
+						case <-cn.CloseNotify():
+							fmt.Println(2)
+						}
+						close(stopChan)
+					}()
+				} else {
+					go func() {
+						<-h.stopChan
+						close(stopChan)
+					}()
+				}
+
 				select {
-				case <-h.stopChan:
+				case <-stopChan:
 					fmt.Println("okok")
 				case <-time.After(time.Second * 10):
 				}

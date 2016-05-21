@@ -21,8 +21,9 @@ func main() {
 	flag.Parse()
 
 	logger := log.New(os.Stdout, "", log.LstdFlags)
-
 	logger.Println("initializing server")
+
+	// TODO USE MAX CPU
 
 	stopHandlingChan := make(chan struct{})
 
