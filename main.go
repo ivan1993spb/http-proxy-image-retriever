@@ -26,8 +26,11 @@ func main() {
 	server := &graceful.Server{
 		Timeout: time.Second,
 		Server: &http.Server{
-			Addr:    serverAddr,
-			Handler: &HTTPProxyHandler{logger, stopHandlingChan},
+			Addr: serverAddr,
+			Handler: &HTTPProxyHandler{
+				logger,
+				stopHandlingChan,
+			},
 		},
 		Logger: logger,
 		ShutdownInitiated: func() {
