@@ -7,12 +7,14 @@ import (
 	"time"
 )
 
-type HTTPProxyHandler struct {
+//go:generate go-bindata static/
+
+type HTTPImageProxyHandler struct {
 	logger   *log.Logger
 	stopChan <-chan struct{}
 }
 
-func (h *HTTPProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *HTTPImageProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Println("accepted request")
 
 	if r.Method == http.MethodGet {
@@ -24,6 +26,7 @@ func (h *HTTPProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				case <-time.After(time.Second * 10):
 				}
 			} else {
+				//data := MustAsset("static/error.html")
 				h.logger.Println("passed empty url")
 			}
 		} else {

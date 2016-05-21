@@ -30,7 +30,7 @@ func main() {
 		Timeout: time.Second,
 		Server: &http.Server{
 			Addr: serverAddr,
-			Handler: &HTTPProxyHandler{
+			Handler: &HTTPImageProxyHandler{
 				logger,
 				stopHandlingChan,
 			},
