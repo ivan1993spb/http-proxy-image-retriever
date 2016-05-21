@@ -21,6 +21,9 @@ func main() {
 	flag.Parse()
 
 	logger := log.New(os.Stdout, "", log.LstdFlags)
+
+	logger.Println("initializing server")
+
 	stopHandlingChan := make(chan struct{})
 
 	server := &graceful.Server{

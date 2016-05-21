@@ -14,4 +14,4 @@ Tests:
 
 1. проверить разные кодировки
 2. проверить протоколы http и https
-3. три случая img src: path/to/image.png, /path/to/image.png, http://ex.ple/path/to/image.png
+3. три случая img src: `path/to/image.png`, `/path/to/image.png`, `http://ex.ple/path/to/image.png`

@@ -15,10 +15,24 @@ type HTTPProxyHandler struct {
 func (h *HTTPProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Println("accepted request")
 
-	select {
-	case <-h.stopChan:
-		fmt.Println("okok")
-	case <-time.After(time.Second * 10):
+	if r.Method == http.MethodGet {
+		if r.URL.Path == "/" {
+			if url := r.FormValue("url"); url != "" {
+				select {
+				case <-h.stopChan:
+					fmt.Println("okok")
+				case <-time.After(time.Second * 10):
+				}
+			} else {
+				h.logger.Println("passed empty url")
+			}
+		} else {
+			h.logger.Println("invalid path")
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		}
+	} else {
+		h.logger.Println("request method not allowed")
+		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 	}
 
 	log.Println("finished connection handling")
