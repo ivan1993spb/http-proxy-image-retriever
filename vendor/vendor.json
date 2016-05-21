@@ -1,0 +1,13 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "rX53OwxaVijTeT5wXXNlzlOjv2c=",
+			"path": "gopkg.in/tylerb/graceful.v1",
+			"revision": "9a3d4236b03bb5d26f7951134d248f9d5510d599",
+			"revisionTime": "2016-03-20T21:35:05Z"
+		}
+	],
+	"rootPath": "github.com/ivan1993spb/http-proxy-image-retriever"
+}
