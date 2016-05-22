@@ -6,22 +6,19 @@ import (
 	"golang.org/x/net/html"
 )
 
-func findImageSources(stopChan <-chan struct{}, r io.Reader) ([]string, error) {
+func findImageSources(stopChan <-chan struct{}, r io.Reader) (sources []string, err error) {
 	z := html.NewTokenizer(r)
-	sources := make([]string, 0)
+	sources = make([]string, 0)
 
 	for {
-		tokenType := z.Next()
-		switch tokenType {
+		switch tokenType := z.Next(); tokenType {
 		case html.ErrorToken:
-			if err := z.Err(); err != nil && err != io.EOF {
-				return nil, err
+			if e := z.Err(); e != nil && e != io.EOF {
+				err = e
 			}
-			return sources, nil
+			return
 		case html.StartTagToken, html.SelfClosingTagToken:
-			token := z.Token()
-
-			if token.Data == "img" && len(token.Attr) > 0 {
+			if token := z.Token(); token.Data == "img" && len(token.Attr) > 0 {
 				for _, attr := range token.Attr {
 					if attr.Key == "src" && attr.Val != "" {
 						sources = append(sources, attr.Val)
@@ -31,5 +28,6 @@ func findImageSources(stopChan <-chan struct{}, r io.Reader) ([]string, error) {
 			}
 		}
 	}
-	return nil, nil
+
+	return
 }
