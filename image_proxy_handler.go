@@ -6,20 +6,20 @@ import (
 	"sync"
 )
 
-type HTTPImageProxyHandler struct {
+type ImageProxyHandler struct {
 	logger   *log.Logger
 	stopLock sync.Mutex
 	stopChan chan struct{}
 }
 
-func NewHTTPImageProxyHandler(logger *log.Logger) *HTTPImageProxyHandler {
-	return &HTTPImageProxyHandler{
+func NewImageProxyHandler(logger *log.Logger) *ImageProxyHandler {
+	return &ImageProxyHandler{
 		logger:   logger,
 		stopChan: make(chan struct{}),
 	}
 }
 
-func (h *HTTPImageProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *ImageProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.logger.Println("processing url:", r.FormValue("url"))
 
 	stopChan := h.getRequestStopChan(w)
@@ -50,7 +50,7 @@ func (h *HTTPImageProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 }
 
 // getRequestStopChan returns stop chan for a request
-func (h *HTTPImageProxyHandler) getRequestStopChan(w http.ResponseWriter) <-chan struct{} {
+func (h *ImageProxyHandler) getRequestStopChan(w http.ResponseWriter) <-chan struct{} {
 	if cn, ok := w.(http.CloseNotifier); ok {
 		stopChan := make(chan struct{})
 
@@ -70,7 +70,7 @@ func (h *HTTPImageProxyHandler) getRequestStopChan(w http.ResponseWriter) <-chan
 	return h.stopChan
 }
 
-func (h *HTTPImageProxyHandler) Stop() {
+func (h *ImageProxyHandler) Stop() {
 	h.stopLock.Lock()
 	defer h.stopLock.Unlock()
 

@@ -24,7 +24,7 @@ func main() {
 	logger := log.New(os.Stdout, "", log.LstdFlags)
 	logger.Println("initializing server")
 
-	handler := NewHTTPImageProxyHandler(logger)
+	handler := NewImageProxyHandler(logger)
 
 	server := &graceful.Server{
 		Timeout: time.Second,
