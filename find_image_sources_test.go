@@ -141,10 +141,8 @@ func TestFindImageSourcesHTML(t *testing.T) {
 
 func testFindImageSources(t *testing.T, html string) {
 	r := strings.NewReader(html)
-	stopChan := make(chan struct{})
 
-	sources, err := FindImageSources(stopChan, r)
-	close(stopChan)
+	sources, err := FindImageSources(r)
 	assert.Nil(t, err)
 	expected := []string{"image.png", "test.jpg", "path/to/test.jpg", "path/to/test12.jpg",
 		"/path/to/test.gif", "data:image/gif;base64,R0lGODlhAQABAIAAAP///////yH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="}
@@ -153,10 +151,8 @@ func testFindImageSources(t *testing.T, html string) {
 
 func TestFindImageSourcesEmpty(t *testing.T) {
 	r := strings.NewReader("")
-	stopChan := make(chan struct{})
 
-	sources, err := FindImageSources(stopChan, r)
-	close(stopChan)
+	sources, err := FindImageSources(r)
 	assert.Nil(t, err)
 	expected := []string{}
 	assert.Equal(t, expected, sources, "invalid result")

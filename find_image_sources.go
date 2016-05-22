@@ -7,7 +7,7 @@ import (
 	"golang.org/x/net/html"
 )
 
-func FindImageSources(stopChan <-chan struct{}, r io.Reader) (sources []string, err error) {
+func FindImageSources(r io.Reader) (sources []string, err error) {
 	z := html.NewTokenizer(r)
 	sources = make([]string, 0)
 

@@ -48,7 +48,7 @@ func (h *ImageProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	case resp := <-respChan:
 		h.logger.Println("received response")
-		imgSources, err := FindImageSources(stopChan, resp.Body)
+		imgSources, err := FindImageSources(resp.Body)
 		if err != nil {
 			h.logger.Println("parsing response error:", err)
 			HTTPErrorHTML(w, "cannot parse loaded html page", http.StatusOK)
@@ -56,9 +56,19 @@ func (h *ImageProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		for _, source := range imgSources {
-			// TODO fix image url: `path/to/image.png`, `/path/to/image.png`, `http://ex.ple/path/to/image.png`
-			// TODO add URL data case
-			h.logger.Println("found src:", source)
+			if IsDataUrl(source) {
+				// TODO add URL data case
+
+			} else {
+				imageURL, err := url.Parse(source)
+				if err != nil {
+					h.logger.Println("cannot parse image url:", err)
+					continue
+				}
+
+				imageURL = URL.ResolveReference(imageURL)
+				h.logger.Println("found image:", imageURL)
+			}
 		}
 	}
 }
