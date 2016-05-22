@@ -10,6 +10,7 @@ func MiddlewareCheckRequest(next http.Handler, logger *log.Logger) http.Handler 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Println("accepted request")
 		defer log.Println("finished request handling")
+
 		logger.Println("checking request")
 
 		if r.Method != http.MethodGet {

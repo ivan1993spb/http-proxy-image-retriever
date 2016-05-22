@@ -44,6 +44,7 @@ func main() {
 	logger.Println("starting server")
 
 	if err := server.ListenAndServe(); err != nil {
+		// If is critical error
 		if opErr, ok := err.(*net.OpError); !ok || (ok && opErr.Op != "accept") {
 			logger.Fatal(err)
 		}

@@ -143,7 +143,7 @@ func testFindImageSources(t *testing.T, html string) {
 	r := strings.NewReader(html)
 	stopChan := make(chan struct{})
 
-	sources, err := findImageSources(stopChan, r)
+	sources, err := FindImageSources(stopChan, r)
 	close(stopChan)
 	assert.Nil(t, err)
 	expected := []string{"image.png", "test.jpg", "path/to/test.jpg", "path/to/test12.jpg",
@@ -155,7 +155,7 @@ func TestFindImageSourcesEmpty(t *testing.T) {
 	r := strings.NewReader("")
 	stopChan := make(chan struct{})
 
-	sources, err := findImageSources(stopChan, r)
+	sources, err := FindImageSources(stopChan, r)
 	close(stopChan)
 	assert.Nil(t, err)
 	expected := []string{}

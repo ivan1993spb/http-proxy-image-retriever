@@ -18,6 +18,7 @@ var ErrorPageTmpl = template.Must(template.New("error_page").Parse(`<!DOCTYPE ht
 </html>
 `))
 
+// HTTPErrorHTML sends error message with specific status code
 func HTTPErrorHTML(w http.ResponseWriter, error string, code int) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(code)

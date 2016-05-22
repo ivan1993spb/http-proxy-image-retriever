@@ -3,15 +3,21 @@ package main
 import (
 	"log"
 	"net/http"
+	"net/url"
 	"sync"
 )
 
+// ImageProxyHandler accepts http request with url param, downloads
+// html page from passed url, parses html and finds all images, downloads
+// all found images, generates response html page with found images included
+// into page by data URI scheme.
 type ImageProxyHandler struct {
 	logger   *log.Logger
 	stopLock sync.Mutex
 	stopChan chan struct{}
 }
 
+// NewImageProxyHandler creates new ImageProxyHandler
 func NewImageProxyHandler(logger *log.Logger) *ImageProxyHandler {
 	return &ImageProxyHandler{
 		logger:   logger,
@@ -19,11 +25,19 @@ func NewImageProxyHandler(logger *log.Logger) *ImageProxyHandler {
 	}
 }
 
+// Implementing http.Handler interface
 func (h *ImageProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	h.logger.Println("processing url:", r.FormValue("url"))
+	URL, err := url.Parse(r.FormValue("url"))
+	if err != nil {
+		h.logger.Println("invalid url:", err)
+		HTTPErrorHTML(w, "invalid url", http.StatusOK)
+		return
+	}
+
+	h.logger.Println("processing url:", URL)
 
 	stopChan := h.getRequestStopChan(w)
-	respChan, errChan := download(r.FormValue("url"), stopChan)
+	respChan, errChan := Download(URL, stopChan)
 
 	select {
 	case <-stopChan:
@@ -34,10 +48,10 @@ func (h *ImageProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	case resp := <-respChan:
 		h.logger.Println("received response")
-		imgSources, err := findImageSources(stopChan, resp.Body)
+		imgSources, err := FindImageSources(stopChan, resp.Body)
 		if err != nil {
 			h.logger.Println("parsing response error:", err)
-			HTTPErrorHTML(w, "cannot parse html page: "+r.FormValue("url"), http.StatusOK)
+			HTTPErrorHTML(w, "cannot parse loaded html page", http.StatusOK)
 			return
 		}
 
@@ -70,6 +84,7 @@ func (h *ImageProxyHandler) getRequestStopChan(w http.ResponseWriter) <-chan str
 	return h.stopChan
 }
 
+// Stop stops all processing goroutines started by handler
 func (h *ImageProxyHandler) Stop() {
 	h.stopLock.Lock()
 	defer h.stopLock.Unlock()
