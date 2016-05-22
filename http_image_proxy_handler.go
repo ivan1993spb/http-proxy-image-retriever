@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"sync"
@@ -33,8 +32,12 @@ func (h *HTTPImageProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 		h.logger.Println("loading error:", err)
 		HTTPErrorHTML(w, "cannot load url", http.StatusOK)
 	case resp := <-respChan:
-		fmt.Println("received response")
-		resp.Body
+		h.logger.Println("received response")
+		// TODO fix image url: `path/to/image.png`, `/path/to/image.png`, `http://ex.ple/path/to/image.png`
+		urlChan := retrieveURLs(stopChan, resp.Body)
+		for URL := range urlChan {
+			h.logger.Println("found url:", URL)
+		}
 	}
 }
 
