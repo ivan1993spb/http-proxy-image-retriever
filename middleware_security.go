@@ -84,26 +84,54 @@ func checkUrl(URL *url.URL) error {
 
 func isHostPortOfThisServer(host, port string) bool {
 	serverHost, serverPort, err := net.SplitHostPort(ServerAddr)
+	fmt.Println(1)
 	if err != nil {
 		// server cannot run with invalid addr
 		return false
 	}
+	fmt.Println(2)
 
 	if serverPort == "" {
 		serverPort = "80"
 	}
+	fmt.Println(3)
 
 	if serverPort != port {
 		return false
 	}
+	fmt.Println(4)
 
-	serverAddrs, err := net.LookupAddr(serverHost)
-	if err != nil {
-		return false
+	fmt.Println(serverHost)
+
+	var serverAddrs []string
+	if serverHost == "" {
+		addrs, err := net.InterfaceAddrs()
+		if err != nil {
+			return false
+		}
+		for _, addr := range addrs {
+			if ipnet, ok := addr.(*net.IPNet); ok {
+				if ipnet.IP.To4() != nil {
+					serverAddrs = append(serverAddrs, ipnet.IP.String())
+				}
+				if ipnet.IP.To16() != nil {
+					serverAddrs = append(serverAddrs, ipnet.IP.String())
+				}
+			}
+
+		}
+	} else {
+		serverAddrs, err = net.LookupHost(serverHost)
+		if err != nil {
+			return false
+		}
 	}
+	fmt.Println(5)
 
-	addrs, err := net.LookupAddr(host)
+	fmt.Println(host)
+	addrs, err := net.LookupHost(host)
 	if err != nil {
+		fmt.Println(err)
 		return false
 	}
 
