@@ -34,7 +34,7 @@ func main() {
 		},
 		Logger: logger,
 		ShutdownInitiated: func() {
-			// Stop all processing goroutines
+			logger.Println("stop all processing goroutines")
 			handler.Stop()
 		},
 	}

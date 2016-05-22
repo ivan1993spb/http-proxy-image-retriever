@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"sync"
-	"time"
 )
 
 type HTTPImageProxyHandler struct {
@@ -23,10 +23,23 @@ func NewHTTPImageProxyHandler(logger *log.Logger) *HTTPImageProxyHandler {
 
 func (h *HTTPImageProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
+	stopChan := h.getRequestStopChan(w)
+
+	h.logger.Println("processing url:", r.FormValue("url"))
+
+	loadedChan := make(chan struct{})
+	go func() {
+		URL, _ := url.Parse(r.FormValue("url"))
+		download(URL, stopChan)
+		close(loadedChan)
+		fmt.Println("stop loading")
+	}()
+
 	select {
-	case <-h.getRequestStopChan(w):
-		fmt.Println("okok")
-	case <-time.After(time.Second * 10):
+	case <-stopChan:
+		fmt.Println("interrupted")
+	case <-loadedChan:
+		fmt.Println("loaded")
 	}
 
 }
