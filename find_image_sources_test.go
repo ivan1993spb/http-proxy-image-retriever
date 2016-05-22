@@ -20,7 +20,8 @@ const HTML5_SRC_TEST = `<!DOCTYPE html>
         <img src="path/to/test12.jpg" />
         <img src="/path/to/test.gif"/>
         <div>
-            <img style="-webkit-user-select: none;" SRC="data:image/gif;base64,R0lGODlhAQABAIAAAP///////yH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" width="1" height="1">
+            <img style="-webkit-user-select: none;"
+                SRC="data:image/gif;base64,R0lGODlhAQABAIAAAP///////yH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" width="1" height="1">
         </div>
         <img src="">
     </body>
@@ -147,5 +148,16 @@ func testFindImageSources(t *testing.T, html string) {
 	assert.Nil(t, err)
 	expected := []string{"image.png", "test.jpg", "path/to/test.jpg", "path/to/test12.jpg",
 		"/path/to/test.gif", "data:image/gif;base64,R0lGODlhAQABAIAAAP///////yH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="}
+	assert.Equal(t, expected, sources, "invalid result")
+}
+
+func TestFindImageSourcesEmpty(t *testing.T) {
+	r := strings.NewReader("")
+	stopChan := make(chan struct{})
+
+	sources, err := findImageSources(stopChan, r)
+	close(stopChan)
+	assert.Nil(t, err)
+	expected := []string{}
 	assert.Equal(t, expected, sources, "invalid result")
 }

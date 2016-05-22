@@ -40,8 +40,10 @@ func (h *HTTPImageProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 			HTTPErrorHTML(w, "cannot parse html page: "+r.FormValue("url"), http.StatusOK)
 			return
 		}
+
 		for _, source := range imgSources {
 			// TODO fix image url: `path/to/image.png`, `/path/to/image.png`, `http://ex.ple/path/to/image.png`
+			// TODO add URL data case
 			h.logger.Println("found src:", source)
 		}
 	}
