@@ -2,6 +2,7 @@ package main
 
 import (
 	"io"
+	"strings"
 
 	"golang.org/x/net/html"
 )
@@ -18,7 +19,7 @@ func findImageSources(stopChan <-chan struct{}, r io.Reader) (sources []string, 
 			}
 			return
 		case html.StartTagToken, html.SelfClosingTagToken:
-			if token := z.Token(); token.Data == "img" && len(token.Attr) > 0 {
+			if token := z.Token(); strings.ToLower(token.Data) == "img" && len(token.Attr) > 0 {
 				for _, attr := range token.Attr {
 					if attr.Key == "src" && attr.Val != "" {
 						sources = append(sources, attr.Val)

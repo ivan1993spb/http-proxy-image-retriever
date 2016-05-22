@@ -68,7 +68,7 @@ const HTML4_SRC_TEST = `<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http:
         <p>content here</p>
         <img src="image.png">
         <p>content here</p>
-        <img src="test.jpg">
+        <iMG src="test.jpg">
         <p>content here</p>
         <img src="path/to/test.jpg">
         <img src="path/to/test12.jpg" />
@@ -80,7 +80,7 @@ const HTML4_SRC_TEST = `<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http:
         <br/>
         <br/>
         <p>content here</p>
-        <img src="/path/to/test.gif">
+        <Img src="/path/to/test.gif">
         <img src="">
     </body>
 </html>
@@ -97,9 +97,9 @@ const HTML_SRC_TEST = `<html>
     </head>
     <body>
         <p>content here</p>
-        <img src="image.png">
+        <IMG src="image.png">
         <p>content here</p>
-        <img src="test.jpg">
+        <iMg src="test.jpg">
         <p>content here</p>
         <img src="path/to/test.jpg">
         <img src="path/to/test12.jpg" />
