@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
 	"sync"
 )
 
@@ -22,26 +21,21 @@ func NewHTTPImageProxyHandler(logger *log.Logger) *HTTPImageProxyHandler {
 }
 
 func (h *HTTPImageProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-
-	stopChan := h.getRequestStopChan(w)
-
 	h.logger.Println("processing url:", r.FormValue("url"))
 
-	loadedChan := make(chan struct{})
-	go func() {
-		URL, _ := url.Parse(r.FormValue("url"))
-		download(URL, stopChan)
-		close(loadedChan)
-		fmt.Println("stop loading")
-	}()
+	stopChan := h.getRequestStopChan(w)
+	respChan, errChan := download(r.FormValue("url"), stopChan)
 
 	select {
 	case <-stopChan:
-		fmt.Println("interrupted")
-	case <-loadedChan:
-		fmt.Println("loaded")
+		// Connection closed or processing interrupted
+	case err := <-errChan:
+		h.logger.Println("loading error:", err)
+		HTTPErrorHTML(w, "cannot load url", http.StatusOK)
+	case resp := <-respChan:
+		fmt.Println("received response")
+		resp.Body
 	}
-
 }
 
 // getRequestStopChan returns stop chan for a request
@@ -52,7 +46,9 @@ func (h *HTTPImageProxyHandler) getRequestStopChan(w http.ResponseWriter) <-chan
 		go func() {
 			select {
 			case <-h.stopChan:
+				h.logger.Println("processing interrupted")
 			case <-cn.CloseNotify():
+				h.logger.Println("connection closed")
 			}
 			close(stopChan)
 		}()
