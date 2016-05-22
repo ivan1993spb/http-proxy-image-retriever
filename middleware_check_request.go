@@ -45,6 +45,8 @@ func MiddlewareCheckRequest(next http.Handler, logger *log.Logger) http.Handler 
 			return
 		}
 
+		logger.Println("request is trusted")
+
 		next.ServeHTTP(w, r)
 	})
 }
