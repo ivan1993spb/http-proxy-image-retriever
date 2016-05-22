@@ -20,8 +20,6 @@ func NewHTTPImageProxyHandler(logger *log.Logger) *HTTPImageProxyHandler {
 }
 
 func (h *HTTPImageProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log.Println("accepted request")
-	defer log.Println("finished connection handling")
 
 	//cn, ok := w.(http.CloseNotifier)
 	//var stopChan chan struct{}

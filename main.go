@@ -21,11 +21,6 @@ func init() {
 func main() {
 	flag.Parse()
 
-	//log.Println(net.LookupAddr(ServerAddr))
-	//log.Println(net.LookupHost(ServerAddr))
-	//log.Println(net.LookupIP(ServerAddr))
-	//return
-
 	logger := log.New(os.Stdout, "", log.LstdFlags)
 	logger.Println("initializing server")
 
@@ -35,7 +30,7 @@ func main() {
 		Timeout: time.Second,
 		Server: &http.Server{
 			Addr:    ServerAddr,
-			Handler: MiddlewareSecurity(handler, logger),
+			Handler: MiddlewareCheckRequest(handler, logger),
 		},
 		Logger: logger,
 		ShutdownInitiated: func() {
