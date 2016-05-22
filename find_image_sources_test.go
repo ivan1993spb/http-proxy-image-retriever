@@ -24,6 +24,11 @@ const HTML5_SRC_TEST = `<!DOCTYPE html>
 </html>
 `
 
+func TestFindImageSourcesHTML5(t *testing.T) {
+	t.Log("testing html5")
+	testFindImageSources(t, HTML5_SRC_TEST)
+}
+
 const XHTML_SRC_TEST = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
@@ -47,6 +52,11 @@ const XHTML_SRC_TEST = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
     </body>
 </html>
 `
+
+func TestFindImageSourcesXHTML(t *testing.T) {
+	t.Log("testing xhtml")
+	testFindImageSources(t, XHTML_SRC_TEST)
+}
 
 const HTML4_SRC_TEST = `<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
@@ -76,6 +86,50 @@ const HTML4_SRC_TEST = `<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http:
 </html>
 `
 
-func findImageSources(t *testing.T) {
-	r := strings.NewReader("")
+func TestFindImageSourcesHTML4(t *testing.T) {
+	t.Log("testing html4")
+	testFindImageSources(t, HTML4_SRC_TEST)
+}
+
+const HTML_SRC_TEST = `<html>
+    <head>
+        <title></title>
+    </head>
+    <body>
+        <p>content here</p>
+        <img src="image.png">
+        <p>content here</p>
+        <img src="test.jpg">
+        <p>content here</p>
+        <img src="path/to/test.jpg">
+        <img src="path/to/test12.jpg" />
+        <p>content here</p>
+        <p>content here</p>
+        <br/>
+        <br/>
+        <br/>
+        <br/>
+        <br/>
+        <p>content here</p>
+        <img src="/path/to/test.gif">
+        <img src="">
+    </body>
+</html>
+`
+
+func TestFindImageSourcesHTML(t *testing.T) {
+	t.Log("testing html")
+	testFindImageSources(t, HTML_SRC_TEST)
+}
+
+func testFindImageSources(t *testing.T, html string) {
+	r := strings.NewReader(html)
+	stopChan := make(chan struct{})
+
+	sources, err := findImageSources(stopChan, r)
+	close(stopChan)
+	assert.Nil(t, err)
+	expected := []string{"image.png", "test.jpg", "path/to/test.jpg",
+		"path/to/test12.jpg", "/path/to/test.gif"}
+	assert.Equal(t, expected, sources, "invalid result")
 }

@@ -31,12 +31,18 @@ func (h *HTTPImageProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 	case err := <-errChan:
 		h.logger.Println("loading error:", err)
 		HTTPErrorHTML(w, "cannot load url", http.StatusOK)
+		return
 	case resp := <-respChan:
 		h.logger.Println("received response")
-		// TODO fix image url: `path/to/image.png`, `/path/to/image.png`, `http://ex.ple/path/to/image.png`
-		urlChan := retrieveURLs(stopChan, resp.Body)
-		for URL := range urlChan {
-			h.logger.Println("found url:", URL)
+		imgSources, err := findImageSources(stopChan, resp.Body)
+		if err == nil {
+			h.logger.Println("parsing response error:", err)
+			HTTPErrorHTML(w, "cannot parse html page: "+r.FormValue("url"), http.StatusOK)
+			return
+		}
+		for source := range imgSources {
+			// TODO fix image url: `path/to/image.png`, `/path/to/image.png`, `http://ex.ple/path/to/image.png`
+			h.logger.Println("found src:", source)
 		}
 	}
 }
