@@ -21,7 +21,7 @@ func findImageSources(stopChan <-chan struct{}, r io.Reader) (sources []string, 
 		case html.StartTagToken, html.SelfClosingTagToken:
 			if token := z.Token(); strings.ToLower(token.Data) == "img" && len(token.Attr) > 0 {
 				for _, attr := range token.Attr {
-					if attr.Key == "src" && attr.Val != "" {
+					if strings.ToLower(attr.Key) == "src" && attr.Val != "" {
 						sources = append(sources, attr.Val)
 						break
 					}

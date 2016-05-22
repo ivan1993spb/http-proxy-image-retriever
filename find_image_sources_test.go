@@ -14,11 +14,14 @@ const HTML5_SRC_TEST = `<!DOCTYPE html>
         <title>Error</title>
     </head>
     <body>
-        <img src="image.png">
-        <img src="test.jpg">
+        <img SRC="image.png">
+        <IMG src="test.jpg">
         <img src="path/to/test.jpg">
         <img src="path/to/test12.jpg" />
-        <img src="/path/to/test.gif">
+        <img src="/path/to/test.gif"/>
+        <div>
+            <img style="-webkit-user-select: none;" SRC="data:image/gif;base64,R0lGODlhAQABAIAAAP///////yH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" width="1" height="1">
+        </div>
         <img src="">
     </body>
 </html>
@@ -48,6 +51,11 @@ const XHTML_SRC_TEST = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
         <p>content here</p>
         <p>content here</p>
         <img src="/path/to/test.gif">
+
+        <div>
+            <img style="-webkit-user-select: none;" SRC="data:image/gif;base64,R0lGODlhAQABAIAAAP///////yH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" width="1" height="1">
+        </div>
+
         <img src="">
     </body>
 </html>
@@ -81,6 +89,9 @@ const HTML4_SRC_TEST = `<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http:
         <br/>
         <p>content here</p>
         <Img src="/path/to/test.gif">
+        <div>
+            <img style="-webkit-user-select: none;" SRC="data:image/gif;base64,R0lGODlhAQABAIAAAP///////yH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" width="1" height="1">
+        </div>
         <img src="">
     </body>
 </html>
@@ -112,6 +123,11 @@ const HTML_SRC_TEST = `<html>
         <br/>
         <p>content here</p>
         <img src="/path/to/test.gif">
+        <p>
+            <div>
+                <img style="-webkit-user-select: none;" SRC="data:image/gif;base64,R0lGODlhAQABAIAAAP///////yH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" width="1" height="1">
+            </div>
+        </p>
         <img src="">
     </body>
 </html>
@@ -129,7 +145,7 @@ func testFindImageSources(t *testing.T, html string) {
 	sources, err := findImageSources(stopChan, r)
 	close(stopChan)
 	assert.Nil(t, err)
-	expected := []string{"image.png", "test.jpg", "path/to/test.jpg",
-		"path/to/test12.jpg", "/path/to/test.gif"}
+	expected := []string{"image.png", "test.jpg", "path/to/test.jpg", "path/to/test12.jpg",
+		"/path/to/test.gif", "data:image/gif;base64,R0lGODlhAQABAIAAAP///////yH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="}
 	assert.Equal(t, expected, sources, "invalid result")
 }
