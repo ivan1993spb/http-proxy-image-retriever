@@ -11,12 +11,6 @@ import (
 	"github.com/vincent-petithory/dataurl"
 )
 
-var GoroutineCount uint
-
-func init() {
-	flag.UintVar(&GoroutineCount, "goroutine-count", 0, "")
-}
-
 // ImageProxyHandler accepts http request with url param, downloads
 // html page from passed url, parses html and finds all images, downloads
 // all found images, generates response html page with found images included
