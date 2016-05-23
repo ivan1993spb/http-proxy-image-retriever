@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	//"sync"
+	"time"
 )
 
 type Loader struct {
@@ -13,8 +14,14 @@ type Loader struct {
 	*http.Client
 }
 
-func NewLoader() *Loader {
-	return nil
+func NewLoader(logger *log.Logger, maxWorkerCount uint, timeout time.Duration) *Loader {
+	return &Loader{
+		logger: logger,
+		queue:  make(chan struct{}, maxWorkerCount),
+		Client: &http.Client{
+			Timeout: timeout,
+		},
+	}
 }
 
 func (l *Loader) Download(stopChan <-chan struct{}, URL *url.URL, callback func(*http.Response, error)) {
@@ -35,5 +42,4 @@ func (l *Loader) Download(stopChan <-chan struct{}, URL *url.URL, callback func(
 
 		//l.waitGroup.Done()
 	}()
-
 }

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -26,6 +25,7 @@ type ImageProxyHandler struct {
 func NewImageProxyHandler(logger *log.Logger) *ImageProxyHandler {
 	return &ImageProxyHandler{
 		logger:   logger,
+		loader:   NewLoader(logger, WorkerCount, RequestTimeout),
 		stopChan: make(chan struct{}),
 	}
 }
@@ -45,6 +45,21 @@ func (h *ImageProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	imageURLChan, dataURLChan1, errorChan1 := h.findImagesPageURL(stopChan, URL)
 	dataURLChan2, errorChan2 := h.loadImages(stopChan, imageURLChan)
 
+	errorChan := MergeErrorChans(stopChan, errorChan1, errorChan2)
+	dataURLChan := MergeDataURLChans(stopChan, dataURLChan1, dataURLChan2)
+
+	go func() {
+		for {
+			select {
+			case err := <-errorChan:
+				h.logger.Println(err)
+			case <-stopChan:
+				return
+			}
+		}
+	}()
+
+	ImagesHTMLRender(w, dataURLChan)
 }
 
 // getRequestStopChan returns stop chan for a request
@@ -93,13 +108,13 @@ func (h *ImageProxyHandler) findImagesPageURL(stopChan <-chan struct{}, URL *url
 		}()
 
 		if err != nil {
-			err <- &ErrFindImagesPageURL{"loading html page error: " + err.Error()}
+			errorChan <- &ErrFindImagesPageURL{"loading html page error: " + err.Error()}
 			return
 		}
 
 		imgSources, err := FindImageSources(resp.Body)
 		if err != nil {
-			err <- &ErrFindImagesPageURL{"parsing response error: " + err.Error()}
+			errorChan <- &ErrFindImagesPageURL{"parsing response error: " + err.Error()}
 			return
 		}
 
