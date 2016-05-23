@@ -1,11 +1,18 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"net/http"
 	"net/url"
 	"sync"
 )
+
+var GoroutineCount uint
+
+func init() {
+	flag.UintVar(&GoroutineCount, "goroutine-count", 0, "")
+}
 
 // ImageProxyHandler accepts http request with url param, downloads
 // html page from passed url, parses html and finds all images, downloads
@@ -42,6 +49,7 @@ func (h *ImageProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	select {
 	case <-stopChan:
 		// Connection closed or processing interrupted
+		return
 	case err := <-errChan:
 		h.logger.Println("loading error:", err)
 		HTTPErrorHTML(w, "cannot load url", http.StatusOK)
@@ -53,6 +61,16 @@ func (h *ImageProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			h.logger.Println("parsing response error:", err)
 			HTTPErrorHTML(w, "cannot parse loaded html page", http.StatusOK)
 			return
+		}
+
+		errChanChan := make(chan (<-chan error))
+		LogErrorChan(stopChan, errChanChan, h.logger)
+
+		urlChan := make(chan *url.URL)
+
+		for i := 0; i < 10; i++ {
+			_, errChan := DownloadImages(stopChan, urlChan)
+			errChanChan <- errChan
 		}
 
 		for _, source := range imgSources {
@@ -68,6 +86,7 @@ func (h *ImageProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 				imageURL = URL.ResolveReference(imageURL)
 				h.logger.Println("found image:", imageURL)
+				urlChan <- imageURL
 			}
 		}
 	}

@@ -23,6 +23,7 @@ func Download(URL *url.URL, stopChan <-chan struct{}) (<-chan *http.Response, <-
 			URL:    URL,
 			Cancel: stopChan,
 		})
+
 		if err != nil {
 			errChan <- err
 		} else {
