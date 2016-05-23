@@ -9,6 +9,12 @@
 			"revisionTime": "2016-05-04T13:01:55Z"
 		},
 		{
+			"checksumSHA1": "CdE9OUEGLn2pAv1UMuM5rSlaUpM=",
+			"path": "github.com/vincent-petithory/dataurl",
+			"revision": "9a301d65acbb728fcc3ace14f45f511a4cfeea9c",
+			"revisionTime": "2016-03-30T18:21:26Z"
+		},
+		{
 			"checksumSHA1": "vqc3a+oTUGX8PmD0TS+qQ7gmN8I=",
 			"path": "golang.org/x/net/html",
 			"revision": "35ec611a141ee705590b9eb64d673f9e6dfeb1ac",
