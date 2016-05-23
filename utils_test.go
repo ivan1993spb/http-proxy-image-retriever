@@ -41,3 +41,32 @@ func TestIsDataUrl(t *testing.T) {
 		assert.False(t, IsDataUrl(s), s)
 	}
 }
+
+func TestIsBrowserImageContentType(t *testing.T) {
+	tests := map[string]bool{
+		"image/jpeg":         true,
+		"image/jp2":          true,
+		"image/sdss":         false,
+		"image/jpx":          true,
+		"image/jpm":          true,
+		"image/webp":         true,
+		"image/vnd.ms-photo": true,
+		"image/jxr":          true,
+		"image/gif":          true,
+		"image/png":          true,
+		"image/pn1g":         false,
+		"image/tiff":         true,
+		"image/tiff-fx":      true,
+		"image/svg+xml":      true,
+		"aassdaa":            false,
+		"image/x‑xbitmap":    true,
+		"image/x‑xbm":        true,
+		"image/bmp":          true,
+		"image/x-bmp":        true,
+		"image/x-icon":       true,
+	}
+
+	for mime, expected := range tests {
+		assert.Equal(t, expected, IsBrowserImageContentType(mime), mime)
+	}
+}
