@@ -2,10 +2,13 @@ package main
 
 import (
 	"flag"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"sync"
+
+	"github.com/vincent-petithory/dataurl"
 )
 
 var GoroutineCount uint
@@ -20,6 +23,7 @@ func init() {
 // into page by data URI scheme.
 type ImageProxyHandler struct {
 	logger   *log.Logger
+	loader   *Loader
 	stopLock sync.Mutex
 	stopChan chan struct{}
 }
@@ -44,62 +48,9 @@ func (h *ImageProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.logger.Println("processing url:", URL)
 
 	stopChan := h.getRequestStopChan(w)
-	respChan, errChan := Download(URL, stopChan)
+	imageURLChan, dataURLChan1, errorChan1 := h.findImagesPageURL(stopChan, URL)
+	dataURLChan2, errorChan2 := h.loadImages(stopChan, imageURLChan)
 
-	select {
-	case <-stopChan:
-		// Connection closed or processing interrupted
-		return
-	case err := <-errChan:
-		h.logger.Println("loading error:", err)
-		HTTPErrorHTML(w, "cannot load url", http.StatusOK)
-		return
-	case resp := <-respChan:
-		h.logger.Println("received response")
-		imgSources, err := FindImageSources(resp.Body)
-		if err != nil {
-			h.logger.Println("parsing response error:", err)
-			HTTPErrorHTML(w, "cannot parse loaded html page", http.StatusOK)
-			return
-		}
-
-		errChanChan := make(chan (<-chan error))
-		LogErrorChan(stopChan, errChanChan, h.logger)
-
-		imageChanChan := make(chan (<-chan *Image))
-		imageChan := MergeImageChans(stopChan, imageChanChan)
-
-		urlChan := make(chan *url.URL)
-
-		for i := 0; i < 10; i++ {
-			imageChan, errChan := DownloadImages(stopChan, urlChan)
-			imageChanChan <- imageChan
-			errChanChan <- errChan
-		}
-
-		go func() {
-			for _, source := range imgSources {
-				if IsDataUrl(source) {
-					// TODO add URL data case
-
-				} else {
-					imageURL, err := url.Parse(source)
-					if err != nil {
-						h.logger.Println("cannot parse image url:", err)
-						continue
-					}
-
-					imageURL = URL.ResolveReference(imageURL)
-					h.logger.Println("found image:", imageURL)
-					urlChan <- imageURL
-				}
-			}
-		}()
-
-		for image := range imageChan {
-			log.Println("image", image.MimeType, "len", len(image.Base64Data))
-		}
-	}
 }
 
 // getRequestStopChan returns stop chan for a request
@@ -121,6 +72,108 @@ func (h *ImageProxyHandler) getRequestStopChan(w http.ResponseWriter) <-chan str
 	}
 
 	return h.stopChan
+}
+
+type ErrFindImagesPageURL struct {
+	err string
+}
+
+func (e *ErrFindImagesPageURL) Error() string {
+	return "find images on page error: " + e.err
+}
+
+func (h *ImageProxyHandler) findImagesPageURL(stopChan <-chan struct{}, URL *url.URL) (
+	<-chan *url.URL, <-chan *dataurl.DataURL, <-chan error) {
+
+	var (
+		imageURLChan = make(chan *url.URL)
+		dataURLChan  = make(chan *dataurl.DataURL)
+		errorChan    = make(chan error)
+	)
+
+	h.loader.Download(stopChan, URL, func(resp *http.Response, err error) {
+		defer func() {
+			close(imageURLChan)
+			close(dataURLChan)
+			close(errorChan)
+		}()
+
+		if err != nil {
+			err <- &ErrFindImagesPageURL{"loading html page error: " + err.Error()}
+			return
+		}
+
+		imgSources, err := FindImageSources(resp.Body)
+		if err != nil {
+			err <- &ErrFindImagesPageURL{"parsing response error: " + err.Error()}
+			return
+		}
+
+		for _, source := range imgSources {
+			if IsDataUrl(source) {
+				if du, err := dataurl.DecodeString(source); err != nil {
+					errorChan <- &ErrFindImagesPageURL{"cannot decode dataurl: " + err.Error()}
+				} else {
+					dataURLChan <- du
+				}
+			} else {
+				if imageURL, err := url.Parse(source); err != nil {
+					errorChan <- &ErrFindImagesPageURL{"cannot parse image url: " + err.Error()}
+				} else {
+					imageURLChan <- resp.Request.URL.ResolveReference(imageURL)
+				}
+			}
+		}
+	})
+
+	return imageURLChan, dataURLChan, errorChan
+}
+
+type ErrLoadingImage struct {
+	err string
+}
+
+func (e *ErrLoadingImage) Error() string {
+	return "loading image error: " + e.err
+}
+
+func (h *ImageProxyHandler) loadImages(stopChan <-chan struct{}, imageURLChan <-chan *url.URL) (
+	<-chan *dataurl.DataURL, <-chan error) {
+
+	var (
+		dataURLChan = make(chan *dataurl.DataURL)
+		errorChan   = make(chan error)
+
+		wg sync.WaitGroup
+	)
+
+	for URL := range imageURLChan {
+		wg.Add(1)
+		h.loader.Download(stopChan, URL, func(resp *http.Response, err error) {
+			if err != nil {
+				errorChan <- &ErrLoadingImage{err.Error()}
+			} else if resp.StatusCode != http.StatusOK {
+				errorChan <- &ErrLoadingImage{"bad status code"}
+			} else if contentType := resp.Header.Get("Content-Type"); !IsBrowserImageContentType(contentType) {
+				errorChan <- &ErrLoadingImage{"unexpected content-type: " + contentType}
+			} else if data, err := ioutil.ReadAll(resp.Body); err != nil {
+				errorChan <- &ErrLoadingImage{err.Error()}
+			} else {
+				dataURLChan <- dataurl.New(data, contentType)
+			}
+
+			wg.Done()
+		})
+	}
+
+	go func() {
+		wg.Wait()
+
+		close(dataURLChan)
+		close(errorChan)
+	}()
+
+	return dataURLChan, errorChan
 }
 
 // Stop stops all processing goroutines started by handler
