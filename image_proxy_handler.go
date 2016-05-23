@@ -66,28 +66,38 @@ func (h *ImageProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		errChanChan := make(chan (<-chan error))
 		LogErrorChan(stopChan, errChanChan, h.logger)
 
+		imageChanChan := make(chan (<-chan *Image))
+		imageChan := MergeImageChans(stopChan, imageChanChan)
+
 		urlChan := make(chan *url.URL)
 
 		for i := 0; i < 10; i++ {
-			_, errChan := DownloadImages(stopChan, urlChan)
+			imageChan, errChan := DownloadImages(stopChan, urlChan)
+			imageChanChan <- imageChan
 			errChanChan <- errChan
 		}
 
-		for _, source := range imgSources {
-			if IsDataUrl(source) {
-				// TODO add URL data case
+		go func() {
+			for _, source := range imgSources {
+				if IsDataUrl(source) {
+					// TODO add URL data case
 
-			} else {
-				imageURL, err := url.Parse(source)
-				if err != nil {
-					h.logger.Println("cannot parse image url:", err)
-					continue
+				} else {
+					imageURL, err := url.Parse(source)
+					if err != nil {
+						h.logger.Println("cannot parse image url:", err)
+						continue
+					}
+
+					imageURL = URL.ResolveReference(imageURL)
+					h.logger.Println("found image:", imageURL)
+					urlChan <- imageURL
 				}
-
-				imageURL = URL.ResolveReference(imageURL)
-				h.logger.Println("found image:", imageURL)
-				urlChan <- imageURL
 			}
+		}()
+
+		for image := range imageChan {
+			log.Println("image", image.MimeType, "len", len(image.Base64Data))
 		}
 	}
 }
