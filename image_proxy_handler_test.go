@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -58,4 +59,10 @@ func TestNewImageProxyHandler(t *testing.T) {
 	handler.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code, "invalud status code")
+
+	// Save generated page to file if it possible
+	if f, err := os.Create("test_result.html"); err == nil {
+		io.Copy(f, w.Body)
+		f.Close()
+	}
 }
