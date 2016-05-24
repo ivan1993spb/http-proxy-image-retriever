@@ -25,7 +25,6 @@ const (
 type ImageProxyHandler struct {
 	logger   *log.Logger
 	loader   *Loader
-	stopLock sync.Mutex
 	stopChan chan struct{}
 }
 
@@ -193,13 +192,7 @@ func (h *ImageProxyHandler) loadImages(stopChan <-chan struct{}, imageURLChan <-
 
 // Stop stops all processing goroutines started by handler
 func (h *ImageProxyHandler) Stop() {
-	h.stopLock.Lock()
-	defer h.stopLock.Unlock()
-
-	if h.stopChan != nil {
-		close(h.stopChan)
-		h.stopChan = nil
-	}
+	close(h.stopChan)
 }
 
 var ImagesPageTmpl = template.Must(template.New("images_page").Parse(`<!DOCTYPE html>

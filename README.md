@@ -21,8 +21,8 @@ Testing
 * run `http-proxy-image-retriever`;
 * run `curl http://localhost:8888/?url=https%3A%2F%2Fgolang.org%2Fdoc%2F`.
 
-Vegata testing:
+Vegeta testing:
 
 ```
-$ cat vegata_targets | vegeta attack -rate=100 -workers=30 -duration=30s | tee results.bin | vegeta report
+$ cat vegeta_targets | vegeta attack -rate=50 -workers=10 -duration=30s | tee results.bin | vegeta report
 ```
