@@ -23,10 +23,12 @@ type ImageProxyHandler struct {
 
 // NewImageProxyHandler creates new ImageProxyHandler
 func NewImageProxyHandler(logger *log.Logger) *ImageProxyHandler {
+	stopChan := make(chan struct{})
+
 	return &ImageProxyHandler{
 		logger:   logger,
-		loader:   NewLoader(logger),
-		stopChan: make(chan struct{}),
+		loader:   NewLoader(logger, stopChan),
+		stopChan: stopChan,
 	}
 }
 

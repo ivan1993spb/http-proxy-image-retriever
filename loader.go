@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"time"
@@ -24,12 +25,22 @@ type Loader struct {
 	*http.Client
 }
 
-func NewLoader(logger *log.Logger) *Loader {
+func NewLoader(logger *log.Logger, cancel <-chan struct{}) *Loader {
 	return &Loader{
 		logger: logger,
 		queue:  make(chan struct{}, MaxWorkerCount),
 		Client: &http.Client{
 			Timeout: RequestTimeout,
+			Transport: &http.Transport{
+				Proxy: http.ProxyFromEnvironment,
+				Dial: (&net.Dialer{
+					Timeout: 30 * time.Second,
+					Cancel:  cancel,
+				}).Dial,
+				TLSHandshakeTimeout:   10 * time.Second,
+				ExpectContinueTimeout: 1 * time.Second,
+				DisableKeepAlives:     true,
+			},
 		},
 	}
 }
