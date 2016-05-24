@@ -1,10 +1,14 @@
 package main
 
 import (
-	"github.com/vincent-petithory/dataurl"
+	//"fmt"
 	"html/template"
 	"net/http"
 	"regexp"
+	//"strings"
+	"sync"
+
+	"github.com/vincent-petithory/dataurl"
 )
 
 var ExpDetectDataURL = regexp.MustCompile(
@@ -54,7 +58,7 @@ var ImagesPageTmpl = template.Must(template.New("images_page").Parse(`<!DOCTYPE 
     </head>
     <body>
         <h1>Images</h1>
-        {{range .}}<img src="{{.}}">
+        {{range .}}<img src="{{html .}}">
         {{else}}<b>No images</b>{{end}}
     </body>
 </html>
@@ -63,39 +67,66 @@ var ImagesPageTmpl = template.Must(template.New("images_page").Parse(`<!DOCTYPE 
 func ImagesHTMLRender(w http.ResponseWriter, dataURLChan <-chan *dataurl.DataURL) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
+	//dataURLs := []string{}
+	//for dataURL := range dataURLChan {
+	//	dataURL.String()
+	//	dataURLs = append(dataURLs, dataURL.String())
+	//	//dataURLs = append(dataURLs, strings.Repeat("A", 111500))
+	//}
+	//fmt.Println(dataURLs)
 	ImagesPageTmpl.Execute(w, dataURLChan)
 }
 
-func MergeErrorChans(stopChan <-chan struct{}, errorChan1 <-chan error, errorChan2 <-chan error) <-chan error {
-	errorChan := make(chan error)
+func MergeErrorChans(stopChan <-chan struct{}, errorChans ...<-chan error) <-chan error {
+	var wg sync.WaitGroup
+	errorChanOut := make(chan error)
+
+	output := func(errorChan <-chan error) {
+		for err := range errorChan {
+			select {
+			case errorChanOut <- err:
+			case <-stopChan:
+			}
+		}
+		wg.Done()
+	}
+
+	wg.Add(len(errorChans))
+	for _, errorChan := range errorChans {
+		go output(errorChan)
+	}
 
 	go func() {
-		defer close(errorChan)
-
-		select {
-		case <-stopChan:
-			return
-		case errorChan <- <-errorChan1:
-		case errorChan <- <-errorChan2:
-		}
+		wg.Wait()
+		close(errorChanOut)
 	}()
 
-	return errorChan
+	return errorChanOut
 }
 
-func MergeDataURLChans(stopChan <-chan struct{}, dataURLChan1 <-chan *dataurl.DataURL, dataURLChan2 <-chan *dataurl.DataURL) <-chan *dataurl.DataURL {
-	dataURLChan := make(chan *dataurl.DataURL)
+func MergeDataURLChans(stopChan <-chan struct{}, dataURLChans ...<-chan *dataurl.DataURL) <-chan *dataurl.DataURL {
+	var wg sync.WaitGroup
+	dataURLChanOut := make(chan *dataurl.DataURL)
+
+	output := func(dataURLChan <-chan *dataurl.DataURL) {
+		for dataURL := range dataURLChan {
+			select {
+			case dataURLChanOut <- dataURL:
+			case <-stopChan:
+			}
+		}
+		wg.Done()
+	}
+
+	wg.Add(len(dataURLChans))
+	for _, dataURLChan := range dataURLChans {
+		go output(dataURLChan)
+	}
 
 	go func() {
-		defer close(dataURLChan)
-
-		select {
-		case <-stopChan:
-			return
-		case dataURLChan <- <-dataURLChan1:
-		case dataURLChan <- <-dataURLChan2:
-		}
+		wg.Wait()
+		close(dataURLChanOut)
 	}()
 
-	return dataURLChan
+	return dataURLChanOut
 }

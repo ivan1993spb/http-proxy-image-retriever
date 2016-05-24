@@ -52,7 +52,7 @@ func (h *ImageProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		for {
 			select {
 			case err := <-errorChan:
-				h.logger.Println(err)
+				h.logger.Println("error", err)
 			case <-stopChan:
 				return
 			}
@@ -100,7 +100,7 @@ func (h *ImageProxyHandler) findImagesPageURL(stopChan <-chan struct{}, URL *url
 		errorChan    = make(chan error)
 	)
 
-	h.loader.Download(stopChan, URL, func(resp *http.Response, err error) {
+	h.loader.DownloadCallback(stopChan, URL, func(resp *http.Response, err error) {
 		defer func() {
 			close(imageURLChan)
 			close(dataURLChan)
@@ -120,12 +120,14 @@ func (h *ImageProxyHandler) findImagesPageURL(stopChan <-chan struct{}, URL *url
 
 		for _, source := range imgSources {
 			if IsDataUrl(source) {
+				h.logger.Println("found dataurl image source")
 				if du, err := dataurl.DecodeString(source); err != nil {
 					errorChan <- &ErrFindImagesPageURL{"cannot decode dataurl: " + err.Error()}
 				} else {
 					dataURLChan <- du
 				}
 			} else {
+				h.logger.Println("found link image source")
 				if imageURL, err := url.Parse(source); err != nil {
 					errorChan <- &ErrFindImagesPageURL{"cannot parse image url: " + err.Error()}
 				} else {
@@ -152,34 +154,37 @@ func (h *ImageProxyHandler) loadImages(stopChan <-chan struct{}, imageURLChan <-
 	var (
 		dataURLChan = make(chan *dataurl.DataURL)
 		errorChan   = make(chan error)
-
-		wg sync.WaitGroup
 	)
 
-	for URL := range imageURLChan {
-		wg.Add(1)
-		h.loader.Download(stopChan, URL, func(resp *http.Response, err error) {
-			if err != nil {
-				errorChan <- &ErrLoadingImage{err.Error()}
-			} else if resp.StatusCode != http.StatusOK {
-				errorChan <- &ErrLoadingImage{"bad status code"}
-			} else if contentType := resp.Header.Get("Content-Type"); !IsBrowserImageContentType(contentType) {
-				errorChan <- &ErrLoadingImage{"unexpected content-type: " + contentType}
-			} else if data, err := ioutil.ReadAll(resp.Body); err != nil {
-				errorChan <- &ErrLoadingImage{err.Error()}
-			} else {
-				dataURLChan <- dataurl.New(data, contentType)
-			}
-
-			wg.Done()
-		})
-	}
-
 	go func() {
-		wg.Wait()
+		var wg sync.WaitGroup
 
-		close(dataURLChan)
-		close(errorChan)
+		for URL := range imageURLChan {
+			wg.Add(1)
+			h.loader.DownloadCallback(stopChan, URL, func(resp *http.Response, err error) {
+				if err != nil {
+					errorChan <- &ErrLoadingImage{err.Error()}
+				} else if resp.StatusCode != http.StatusOK {
+					errorChan <- &ErrLoadingImage{"bad status code"}
+				} else if contentType := resp.Header.Get("Content-Type"); !IsBrowserImageContentType(contentType) {
+					errorChan <- &ErrLoadingImage{"unexpected content-type: " + contentType}
+				} else if data, err := ioutil.ReadAll(resp.Body); err != nil {
+					errorChan <- &ErrLoadingImage{err.Error()}
+				} else {
+					h.logger.Println("image loaded", contentType)
+					dataURLChan <- dataurl.New(data, contentType)
+				}
+
+				wg.Done()
+			})
+		}
+
+		go func() {
+			wg.Wait()
+			h.logger.Println("closing dataURL chan")
+			close(dataURLChan)
+			close(errorChan)
+		}()
 	}()
 
 	return dataURLChan, errorChan

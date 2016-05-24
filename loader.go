@@ -24,10 +24,12 @@ func NewLoader(logger *log.Logger, maxWorkerCount uint, timeout time.Duration) *
 	}
 }
 
-func (l *Loader) Download(stopChan <-chan struct{}, URL *url.URL, callback func(*http.Response, error)) {
+func (l *Loader) DownloadCallback(stopChan <-chan struct{}, URL *url.URL, callback func(*http.Response, error)) {
 	//l.waitGroup.Add(1)
 
 	go func() {
+		l.logger.Println("loading url:", URL)
+
 		select {
 		case l.queue <- struct{}{}:
 
@@ -35,6 +37,8 @@ func (l *Loader) Download(stopChan <-chan struct{}, URL *url.URL, callback func(
 				URL:    URL,
 				Cancel: stopChan,
 			}))
+
+			l.logger.Println("loading: ok")
 
 			<-l.queue
 		case <-stopChan:
