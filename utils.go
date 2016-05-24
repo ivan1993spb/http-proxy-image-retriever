@@ -41,8 +41,8 @@ var ErrorPageTmpl = template.Must(template.New("error_page").Parse(`<!DOCTYPE ht
 </html>
 `))
 
-// HTTPErrorHTML sends error message with specific status code
-func HTTPErrorHTML(w http.ResponseWriter, error string, code int) {
+// ErrorHTML sends error message with specific status code
+func ErrorHTML(w http.ResponseWriter, error string, code int) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(code)
 	ErrorPageTmpl.Execute(w, error)
@@ -53,6 +53,9 @@ var ImagesPageTmpl = template.Must(template.New("images_page").Parse(`<!DOCTYPE 
     <head>
         <meta charset="utf-8">
         <title>Images</title>
+        <style>
+            img { display: block; }
+        </style>
     </head>
     <body>
         <h1>Images</h1>
@@ -65,13 +68,6 @@ var ImagesPageTmpl = template.Must(template.New("images_page").Parse(`<!DOCTYPE 
 func ImagesHTMLRender(w http.ResponseWriter, dataURLChan <-chan *dataurl.DataURL) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	//dataURLs := []string{}
-	//for dataURL := range dataURLChan {
-	//	dataURL.String()
-	//	dataURLs = append(dataURLs, dataURL.String())
-	//	//dataURLs = append(dataURLs, strings.Repeat("A", 111500))
-	//}
-	//fmt.Println(dataURLs)
 	ImagesPageTmpl.Execute(w, dataURLChan)
 }
 

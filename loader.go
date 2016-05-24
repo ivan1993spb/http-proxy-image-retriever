@@ -4,7 +4,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	//"sync"
 	"time"
 )
 
@@ -25,8 +24,6 @@ func NewLoader(logger *log.Logger, maxWorkerCount uint, timeout time.Duration) *
 }
 
 func (l *Loader) DownloadCallback(stopChan <-chan struct{}, URL *url.URL, callback func(*http.Response, error)) {
-	//l.waitGroup.Add(1)
-
 	go func() {
 		l.logger.Println("loading url:", URL)
 
@@ -42,6 +39,6 @@ func (l *Loader) DownloadCallback(stopChan <-chan struct{}, URL *url.URL, callba
 		case <-stopChan:
 		}
 
-		//l.waitGroup.Done()
+		l.logger.Println("loader finished:", URL)
 	}()
 }

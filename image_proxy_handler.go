@@ -35,7 +35,7 @@ func (h *ImageProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	URL, err := url.Parse(r.FormValue("url"))
 	if err != nil {
 		h.logger.Println("invalid url:", err)
-		HTTPErrorHTML(w, "invalid url", http.StatusOK)
+		ErrorHTML(w, "invalid url", http.StatusOK)
 		return
 	}
 
@@ -50,7 +50,7 @@ func (h *ImageProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		for err := range errorChan {
-			h.logger.Println("ERROR", err)
+			h.logger.Println(err)
 		}
 	}()
 

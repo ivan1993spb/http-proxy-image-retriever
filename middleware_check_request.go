@@ -15,13 +15,13 @@ func MiddlewareCheckRequest(next http.Handler, logger *log.Logger) http.Handler 
 
 		if r.Method != http.MethodGet {
 			logger.Println("request method not allowed")
-			HTTPErrorHTML(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+			ErrorHTML(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 			return
 		}
 
 		if r.URL.Path != "/" {
 			logger.Println("unknown path")
-			HTTPErrorHTML(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			ErrorHTML(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
 		}
 
@@ -29,20 +29,20 @@ func MiddlewareCheckRequest(next http.Handler, logger *log.Logger) http.Handler 
 
 		if URL == "" {
 			logger.Println("passed empty url")
-			HTTPErrorHTML(w, "empty url param", http.StatusOK)
+			ErrorHTML(w, "empty url param", http.StatusOK)
 			return
 		}
 
 		parsedUrl, err := url.Parse(URL)
 		if err != nil {
 			logger.Println("invalid url:", err)
-			HTTPErrorHTML(w, "invalid url", http.StatusOK)
+			ErrorHTML(w, "invalid url", http.StatusOK)
 			return
 		}
 
 		if parsedUrl.Host == "" {
 			logger.Println("invalid url: empty host")
-			HTTPErrorHTML(w, "invalid url", http.StatusOK)
+			ErrorHTML(w, "invalid url", http.StatusOK)
 			return
 		}
 
