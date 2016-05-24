@@ -34,9 +34,11 @@ func TestMiddlewareCheckRequest(t *testing.T) {
 		{request(http.MethodGet, "http://localhost/"), http.StatusOK},
 	}
 
-	emptyNextHandler := http.HandlerFunc(func(http.ResponseWriter, *http.Request) {})
-	emptyLogger := log.New(ioutil.Discard, "", 0)
-	handler := MiddlewareCheckRequest(emptyNextHandler, emptyLogger)
+	var (
+		emptyNextHandler = http.HandlerFunc(func(http.ResponseWriter, *http.Request) {})
+		emptyLogger      = log.New(ioutil.Discard, "", 0)
+		handler          = MiddlewareCheckRequest(emptyNextHandler, emptyLogger)
+	)
 
 	for _, test := range tests {
 		w := httptest.NewRecorder()
