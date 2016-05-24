@@ -15,11 +15,9 @@ To install run `go get -u github.com/ivan1993spb/http-proxy-image-retriever`
 Testing
 -------
 
-* edit files in `test/` directory and run `go generate`;
-* run `go test`;
-* open file *test_result.html*;
-* run `http-proxy-image-retriever`;
-* run `curl http://localhost:8888/?url=https%3A%2F%2Fgolang.org%2Fdoc%2F`.
+* when edited files in `test/` directory don't forget run `go generate` and fix `image_proxy_handler_test.go`;
+* run `go test` and open file *test_result.html*
+* run `http-proxy-image-retriever` and then run `curl http://localhost:8888/?url=https%3A%2F%2Fgolang.org%2Fdoc%2F`.
 
 Vegeta testing:
 
