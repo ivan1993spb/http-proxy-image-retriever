@@ -12,13 +12,15 @@ import (
 var ExpDetectDataURL = regexp.MustCompile(
 	`(?i)^\s*data:([a-z]+\/[a-z0-9\-\+]+(;[a-z\-]+\=[a-z0-9\-]+)?)?(;base64)?,[a-z0-9\!\$\&\'\,\(\)\*\+\,\;\=\-\.\_\~\:\@\/\?\%\s]*\s*$`)
 
-// IsDataUrl returns true if passed string s is data url
+// IsDataUrl returns true if passed string s is data url string
 func IsDataUrl(s string) bool {
 	return ExpDetectDataURL.MatchString(s)
 }
 
-func IsBrowserImageContentType(contentType string) bool {
-	switch contentType {
+// IsBrowserImageMIME returns true if passed string mime is valid mime
+// type for images in web browsers
+func IsBrowserImageMIME(mime string) bool {
+	switch mime {
 	case "image/jpeg", "image/jp2", "image/jpx", "image/jpm", "image/webp", "image/vnd.ms-photo",
 		"image/jxr", "image/gif", "image/png", "image/tiff", "image/tiff-fx", "image/svg+xml",
 		"image/x‑xbitmap", "image/x‑xbm", "image/bmp", "image/x-bmp", "image/x-icon":
@@ -42,10 +44,10 @@ var ErrorPageTmpl = template.Must(template.New("error_page").Parse(`<!DOCTYPE ht
 `))
 
 // ErrorHTML sends error message with specific status code
-func ErrorHTML(w http.ResponseWriter, error string, code int) {
+func ErrorHTML(w http.ResponseWriter, error string, code int) error {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(code)
-	ErrorPageTmpl.Execute(w, error)
+	return ErrorPageTmpl.Execute(w, error)
 }
 
 var ImagesPageTmpl = template.Must(template.New("images_page").Parse(`<!DOCTYPE html>
@@ -54,7 +56,7 @@ var ImagesPageTmpl = template.Must(template.New("images_page").Parse(`<!DOCTYPE 
         <meta charset="utf-8">
         <title>Images</title>
         <style>
-            img { display: block; }
+            img { display: block; margin: 10px; }
         </style>
     </head>
     <body>
@@ -65,10 +67,11 @@ var ImagesPageTmpl = template.Must(template.New("images_page").Parse(`<!DOCTYPE 
 </html>
 `))
 
-func ImagesHTMLRender(w http.ResponseWriter, dataURLChan <-chan *dataurl.DataURL) {
+// ImagesHTML sends html with found images
+func ImagesHTML(w http.ResponseWriter, dataURLChan <-chan *dataurl.DataURL) error {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	ImagesPageTmpl.Execute(w, dataURLChan)
+	return ImagesPageTmpl.Execute(w, dataURLChan)
 }
 
 func MergeErrorChans(stopChan <-chan struct{}, errorChans ...<-chan error) <-chan error {

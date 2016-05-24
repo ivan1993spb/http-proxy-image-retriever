@@ -7,6 +7,7 @@ import (
 	"golang.org/x/net/html"
 )
 
+// FindImageSources reads r and returns all image sources
 func FindImageSources(r io.Reader) (sources []string, err error) {
 	z := html.NewTokenizer(r)
 	sources = make([]string, 0)

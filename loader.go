@@ -1,11 +1,22 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"net/http"
 	"net/url"
 	"time"
 )
+
+var (
+	RequestTimeout time.Duration
+	MaxWorkerCount uint
+)
+
+func init() {
+	flag.DurationVar(&RequestTimeout, "timeout", 0, "time limit for requests")
+	flag.UintVar(&MaxWorkerCount, "max-worker-count", 500, "max count of workers")
+}
 
 type Loader struct {
 	logger *log.Logger
@@ -13,12 +24,12 @@ type Loader struct {
 	*http.Client
 }
 
-func NewLoader(logger *log.Logger, maxWorkerCount uint, timeout time.Duration) *Loader {
+func NewLoader(logger *log.Logger) *Loader {
 	return &Loader{
 		logger: logger,
-		queue:  make(chan struct{}, maxWorkerCount),
+		queue:  make(chan struct{}, MaxWorkerCount),
 		Client: &http.Client{
-			Timeout: timeout,
+			Timeout: RequestTimeout,
 		},
 	}
 }
@@ -32,6 +43,7 @@ func (l *Loader) DownloadCallback(stopChan <-chan struct{}, URL *url.URL, callba
 
 			callback(l.Client.Do(&http.Request{
 				URL:    URL,
+				Close:  true,
 				Cancel: stopChan,
 			}))
 
@@ -39,6 +51,6 @@ func (l *Loader) DownloadCallback(stopChan <-chan struct{}, URL *url.URL, callba
 		case <-stopChan:
 		}
 
-		l.logger.Println("loader finished:", URL)
+		l.logger.Println("loading finished:", URL)
 	}()
 }

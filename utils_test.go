@@ -42,7 +42,7 @@ func TestIsDataUrl(t *testing.T) {
 	}
 }
 
-func TestIsBrowserImageContentType(t *testing.T) {
+func TestIsBrowserImageMIME(t *testing.T) {
 	tests := map[string]bool{
 		"image/jpeg":         true,
 		"image/jp2":          true,
@@ -67,6 +67,6 @@ func TestIsBrowserImageContentType(t *testing.T) {
 	}
 
 	for mime, expected := range tests {
-		assert.Equal(t, expected, IsBrowserImageContentType(mime), mime)
+		assert.Equal(t, expected, IsBrowserImageMIME(mime), mime)
 	}
 }

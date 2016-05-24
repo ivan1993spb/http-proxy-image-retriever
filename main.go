@@ -12,16 +12,10 @@ import (
 	"gopkg.in/tylerb/graceful.v1"
 )
 
-var (
-	ServerAddr     string
-	RequestTimeout time.Duration
-	WorkerCount    uint
-)
+var ServerAddr string
 
 func init() {
 	flag.StringVar(&ServerAddr, "addr", "127.0.0.1:8888", "server address")
-	flag.DurationVar(&RequestTimeout, "timeout", 0, "time limit for requests")
-	flag.UintVar(&WorkerCount, "worker-count", 500, "count of workers")
 }
 
 func main() {

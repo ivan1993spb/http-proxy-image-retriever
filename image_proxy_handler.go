@@ -25,7 +25,7 @@ type ImageProxyHandler struct {
 func NewImageProxyHandler(logger *log.Logger) *ImageProxyHandler {
 	return &ImageProxyHandler{
 		logger:   logger,
-		loader:   NewLoader(logger, WorkerCount, RequestTimeout),
+		loader:   NewLoader(logger),
 		stopChan: make(chan struct{}),
 	}
 }
@@ -44,29 +44,31 @@ func (h *ImageProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	stopChan := h.getRequestStopChan(w)
 	imageURLChan, dataURLChan1, errorChan1 := h.findImagesPageURL(stopChan, URL)
 	dataURLChan2, errorChan2 := h.loadImages(stopChan, imageURLChan)
-
 	errorChan := MergeErrorChans(stopChan, errorChan1, errorChan2)
 	dataURLChan := MergeDataURLChans(stopChan, dataURLChan1, dataURLChan2)
 
 	go func() {
 		for err := range errorChan {
-			h.logger.Println(err)
+			h.logger.Println("request handling error:", err)
 		}
 	}()
 
-	ImagesHTMLRender(w, dataURLChan)
+	if err := ImagesHTML(w, dataURLChan); err != nil {
+		h.logger.Println("writing html response error:", err)
+	}
 }
 
 // getRequestStopChan returns stop chan for a request
 func (h *ImageProxyHandler) getRequestStopChan(w http.ResponseWriter) <-chan struct{} {
 	if cn, ok := w.(http.CloseNotifier); ok {
 		stopChan := make(chan struct{})
+		closeConnChan := cn.CloseNotify()
 
 		go func() {
 			select {
 			case <-h.stopChan:
 				h.logger.Println("processing interrupted")
-			case <-cn.CloseNotify():
+			case <-closeConnChan:
 				h.logger.Println("connection closed")
 			}
 			close(stopChan)
@@ -112,6 +114,8 @@ func (h *ImageProxyHandler) findImagesPageURL(stopChan <-chan struct{}, URL *url
 			errorChan <- &ErrFindImagesPageURL{"parsing response error: " + err.Error()}
 			return
 		}
+
+		h.logger.Println("image sources found:", len(imgSources))
 
 		for _, source := range imgSources {
 			if IsDataUrl(source) {
@@ -161,7 +165,7 @@ func (h *ImageProxyHandler) loadImages(stopChan <-chan struct{}, imageURLChan <-
 					errorChan <- &ErrLoadingImage{err.Error()}
 				} else if resp.StatusCode != http.StatusOK {
 					errorChan <- &ErrLoadingImage{"bad status code"}
-				} else if contentType := resp.Header.Get("Content-Type"); !IsBrowserImageContentType(contentType) {
+				} else if contentType := resp.Header.Get("Content-Type"); !IsBrowserImageMIME(contentType) {
 					errorChan <- &ErrLoadingImage{"unexpected content-type: " + contentType}
 				} else if data, err := ioutil.ReadAll(resp.Body); err != nil {
 					errorChan <- &ErrLoadingImage{err.Error()}
