@@ -15,7 +15,7 @@ To install run `go get -u github.com/ivan1993spb/http-proxy-image-retriever`
 Testing
 -------
 
-* Edit files in `test/` directory and run `go generate`;
+* edit files in `test/` directory and run `go generate`;
 * run `go test`;
 * open file *test_result.html*;
 * run `http-proxy-image-retriever`;
