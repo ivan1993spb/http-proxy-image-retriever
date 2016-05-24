@@ -1,11 +1,9 @@
 package main
 
 import (
-	//"fmt"
 	"html/template"
 	"net/http"
 	"regexp"
-	//"strings"
 	"sync"
 
 	"github.com/vincent-petithory/dataurl"

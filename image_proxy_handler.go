@@ -49,13 +49,8 @@ func (h *ImageProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	dataURLChan := MergeDataURLChans(stopChan, dataURLChan1, dataURLChan2)
 
 	go func() {
-		for {
-			select {
-			case err := <-errorChan:
-				h.logger.Println("error", err)
-			case <-stopChan:
-				return
-			}
+		for err := range errorChan {
+			h.logger.Println("ERROR", err)
 		}
 	}()
 
@@ -88,7 +83,7 @@ type ErrFindImagesPageURL struct {
 }
 
 func (e *ErrFindImagesPageURL) Error() string {
-	return "find images on page error: " + e.err
+	return "finding images on page error: " + e.err
 }
 
 func (h *ImageProxyHandler) findImagesPageURL(stopChan <-chan struct{}, URL *url.URL) (
@@ -181,7 +176,6 @@ func (h *ImageProxyHandler) loadImages(stopChan <-chan struct{}, imageURLChan <-
 
 		go func() {
 			wg.Wait()
-			h.logger.Println("closing dataURL chan")
 			close(dataURLChan)
 			close(errorChan)
 		}()

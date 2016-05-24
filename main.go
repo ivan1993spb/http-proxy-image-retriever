@@ -21,7 +21,7 @@ var (
 func init() {
 	flag.StringVar(&ServerAddr, "addr", "127.0.0.1:8888", "server address")
 	flag.DurationVar(&RequestTimeout, "timeout", 0, "time limit for requests")
-	flag.UintVar(&WorkerCount, "worker-count", 100, "count of workers")
+	flag.UintVar(&WorkerCount, "worker-count", 500, "count of workers")
 }
 
 func main() {

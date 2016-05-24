@@ -38,8 +38,6 @@ func (l *Loader) DownloadCallback(stopChan <-chan struct{}, URL *url.URL, callba
 				Cancel: stopChan,
 			}))
 
-			l.logger.Println("loading: ok")
-
 			<-l.queue
 		case <-stopChan:
 		}
