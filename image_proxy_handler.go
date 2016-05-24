@@ -1,6 +1,7 @@
 package main
 
 import (
+	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -8,6 +9,13 @@ import (
 	"sync"
 
 	"github.com/vincent-petithory/dataurl"
+)
+
+// Buffer sizes
+const (
+	IMAGE_URL_CHAN_BUFFER_SIZE = 20
+	DATAURL_CHAN_BUFFER_SIZE   = 20
+	ERROR_CHAN_BUFFER_SIZE     = 10
 )
 
 // ImageProxyHandler accepts http request with url param, downloads
@@ -55,9 +63,7 @@ func (h *ImageProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	if err := ImagesHTML(w, dataURLChan); err != nil {
-		h.logger.Println("writing html response error:", err)
-	}
+	h.imagesHTML(w, dataURLChan)
 }
 
 // getRequestStopChan returns stop chan for a request
@@ -82,21 +88,19 @@ func (h *ImageProxyHandler) getRequestStopChan(w http.ResponseWriter) <-chan str
 	return h.stopChan
 }
 
-type ErrFindImagesPageURL struct {
-	err string
-}
+type ErrFindImagesPageURL string
 
-func (e *ErrFindImagesPageURL) Error() string {
-	return "finding images on page error: " + e.err
+func (e ErrFindImagesPageURL) Error() string {
+	return "finding images on page error: " + string(e)
 }
 
 func (h *ImageProxyHandler) findImagesPageURL(stopChan <-chan struct{}, URL *url.URL) (
 	<-chan *url.URL, <-chan *dataurl.DataURL, <-chan error) {
 
 	var (
-		imageURLChan = make(chan *url.URL)
-		dataURLChan  = make(chan *dataurl.DataURL)
-		errorChan    = make(chan error)
+		imageURLChan = make(chan *url.URL, IMAGE_URL_CHAN_BUFFER_SIZE)
+		dataURLChan  = make(chan *dataurl.DataURL, DATAURL_CHAN_BUFFER_SIZE)
+		errorChan    = make(chan error, ERROR_CHAN_BUFFER_SIZE)
 	)
 
 	h.loader.DownloadCallback(stopChan, URL, func(resp *http.Response, err error) {
@@ -107,13 +111,13 @@ func (h *ImageProxyHandler) findImagesPageURL(stopChan <-chan struct{}, URL *url
 		}()
 
 		if err != nil {
-			errorChan <- &ErrFindImagesPageURL{"loading html page error: " + err.Error()}
+			errorChan <- ErrFindImagesPageURL("loading html page error: " + err.Error())
 			return
 		}
 
 		imgSources, err := FindImageSources(resp.Body)
 		if err != nil {
-			errorChan <- &ErrFindImagesPageURL{"parsing response error: " + err.Error()}
+			errorChan <- ErrFindImagesPageURL("parsing response error: " + err.Error())
 			return
 		}
 
@@ -123,14 +127,14 @@ func (h *ImageProxyHandler) findImagesPageURL(stopChan <-chan struct{}, URL *url
 			if IsDataUrl(source) {
 				h.logger.Println("found dataurl image source")
 				if du, err := dataurl.DecodeString(source); err != nil {
-					errorChan <- &ErrFindImagesPageURL{"cannot decode dataurl: " + err.Error()}
+					errorChan <- ErrFindImagesPageURL("cannot decode dataurl: " + err.Error())
 				} else {
 					dataURLChan <- du
 				}
 			} else {
 				h.logger.Println("found link image source")
 				if imageURL, err := url.Parse(source); err != nil {
-					errorChan <- &ErrFindImagesPageURL{"cannot parse image url: " + err.Error()}
+					errorChan <- ErrFindImagesPageURL("cannot parse image url: " + err.Error())
 				} else {
 					imageURLChan <- resp.Request.URL.ResolveReference(imageURL)
 				}
@@ -141,20 +145,18 @@ func (h *ImageProxyHandler) findImagesPageURL(stopChan <-chan struct{}, URL *url
 	return imageURLChan, dataURLChan, errorChan
 }
 
-type ErrLoadingImage struct {
-	err string
-}
+type ErrLoadingImage string
 
-func (e *ErrLoadingImage) Error() string {
-	return "loading image error: " + e.err
+func (e ErrLoadingImage) Error() string {
+	return "loading image error: " + string(e)
 }
 
 func (h *ImageProxyHandler) loadImages(stopChan <-chan struct{}, imageURLChan <-chan *url.URL) (
 	<-chan *dataurl.DataURL, <-chan error) {
 
 	var (
-		dataURLChan = make(chan *dataurl.DataURL)
-		errorChan   = make(chan error)
+		dataURLChan = make(chan *dataurl.DataURL, DATAURL_CHAN_BUFFER_SIZE)
+		errorChan   = make(chan error, ERROR_CHAN_BUFFER_SIZE)
 	)
 
 	go func() {
@@ -164,18 +166,17 @@ func (h *ImageProxyHandler) loadImages(stopChan <-chan struct{}, imageURLChan <-
 			wg.Add(1)
 			h.loader.DownloadCallback(stopChan, URL, func(resp *http.Response, err error) {
 				if err != nil {
-					errorChan <- &ErrLoadingImage{err.Error()}
+					errorChan <- ErrLoadingImage(err.Error())
 				} else if resp.StatusCode != http.StatusOK {
-					errorChan <- &ErrLoadingImage{"bad status code"}
+					errorChan <- ErrLoadingImage("bad status code")
 				} else if contentType := resp.Header.Get("Content-Type"); !IsBrowserImageMIME(contentType) {
-					errorChan <- &ErrLoadingImage{"unexpected content-type: " + contentType}
+					errorChan <- ErrLoadingImage("unexpected content-type: " + contentType)
 				} else if data, err := ioutil.ReadAll(resp.Body); err != nil {
-					errorChan <- &ErrLoadingImage{err.Error()}
+					errorChan <- ErrLoadingImage(err.Error())
 				} else {
 					h.logger.Println("image loaded", contentType)
 					dataURLChan <- dataurl.New(data, contentType)
 				}
-
 				wg.Done()
 			})
 		}
@@ -198,5 +199,32 @@ func (h *ImageProxyHandler) Stop() {
 	if h.stopChan != nil {
 		close(h.stopChan)
 		h.stopChan = nil
+	}
+}
+
+var ImagesPageTmpl = template.Must(template.New("images_page").Parse(`<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Images</title>
+        <style>
+            img { display: block; margin: 10px; }
+        </style>
+    </head>
+    <body>
+        <h1>Images</h1>
+        {{range .}}<img src="{{html .}}">
+        {{else}}<b>No images</b>{{end}}
+    </body>
+</html>
+`))
+
+// imagesHTML sends html with found images
+func (h *ImageProxyHandler) imagesHTML(w http.ResponseWriter, dataURLChan <-chan *dataurl.DataURL) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+
+	if err := ImagesPageTmpl.Execute(w, dataURLChan); err != nil {
+		h.logger.Println("writing html response error:", err)
 	}
 }

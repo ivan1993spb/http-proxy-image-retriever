@@ -1,0 +1,5 @@
+GET http://localhost:8888/?url=https://news.yandex.ru/
+GET http://localhost:8888/?url=http://dopiaza.org/tools/datauri/examples/index.php
+GET http://localhost:8888/?url=http://4gophers.ru
+GET http://localhost:8888/?url=https://github.com
+GET http://localhost:8888/?url=https%3A%2F%2Fgolang.org%2Fdoc%2F

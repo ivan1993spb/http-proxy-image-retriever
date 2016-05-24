@@ -6,7 +6,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"runtime"
 	"time"
 
 	"gopkg.in/tylerb/graceful.v1"
@@ -38,8 +37,6 @@ func main() {
 			handler.Stop()
 		},
 	}
-
-	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	logger.Println("starting server")
 

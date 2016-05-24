@@ -15,7 +15,7 @@ var (
 )
 
 func init() {
-	flag.DurationVar(&RequestTimeout, "timeout", 0, "time limit for requests")
+	flag.DurationVar(&RequestTimeout, "timeout", time.Second*15, "time limit for requests")
 	flag.UintVar(&MaxWorkerCount, "max-worker-count", 500, "max count of workers")
 }
 

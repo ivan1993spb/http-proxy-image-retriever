@@ -50,33 +50,9 @@ func ErrorHTML(w http.ResponseWriter, error string, code int) error {
 	return ErrorPageTmpl.Execute(w, error)
 }
 
-var ImagesPageTmpl = template.Must(template.New("images_page").Parse(`<!DOCTYPE html>
-<html>
-    <head>
-        <meta charset="utf-8">
-        <title>Images</title>
-        <style>
-            img { display: block; margin: 10px; }
-        </style>
-    </head>
-    <body>
-        <h1>Images</h1>
-        {{range .}}<img src="{{html .}}">
-        {{else}}<b>No images</b>{{end}}
-    </body>
-</html>
-`))
-
-// ImagesHTML sends html with found images
-func ImagesHTML(w http.ResponseWriter, dataURLChan <-chan *dataurl.DataURL) error {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	return ImagesPageTmpl.Execute(w, dataURLChan)
-}
-
 func MergeErrorChans(stopChan <-chan struct{}, errorChans ...<-chan error) <-chan error {
 	var wg sync.WaitGroup
-	errorChanOut := make(chan error)
+	errorChanOut := make(chan error, ERROR_CHAN_BUFFER_SIZE)
 
 	output := func(errorChan <-chan error) {
 		for err := range errorChan {
@@ -103,7 +79,7 @@ func MergeErrorChans(stopChan <-chan struct{}, errorChans ...<-chan error) <-cha
 
 func MergeDataURLChans(stopChan <-chan struct{}, dataURLChans ...<-chan *dataurl.DataURL) <-chan *dataurl.DataURL {
 	var wg sync.WaitGroup
-	dataURLChanOut := make(chan *dataurl.DataURL)
+	dataURLChanOut := make(chan *dataurl.DataURL, DATAURL_CHAN_BUFFER_SIZE)
 
 	output := func(dataURLChan <-chan *dataurl.DataURL) {
 		for dataURL := range dataURLChan {
