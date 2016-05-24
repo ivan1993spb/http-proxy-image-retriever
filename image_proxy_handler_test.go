@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -11,7 +12,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const TEST_RESULT_FILE_NAME = "test_result.html"
+
 //go:generate go-bindata -o bindata_test.go test/index/ test/path/to/imgs/
+//go:generate gofmt -w bindata_test.go
 
 func TestNewImageProxyHandler(t *testing.T) {
 	mux := http.NewServeMux()
@@ -61,8 +65,10 @@ func TestNewImageProxyHandler(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code, "invalud status code")
 
 	// Save generated page to file if it possible
-	if f, err := os.Create("test_result.html"); err == nil {
+	if f, err := os.Create(TEST_RESULT_FILE_NAME); err == nil {
 		io.Copy(f, w.Body)
 		f.Close()
+
+		fmt.Printf("\nPAGE WAS SAVED TO %s\n\n", TEST_RESULT_FILE_NAME)
 	}
 }
