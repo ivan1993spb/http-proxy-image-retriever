@@ -1,6 +1,6 @@
-[![Build Status](https://travis-ci.org/ivan1993spb/http-proxy-image-retriever.svg?branch=master)](https://travis-ci.org/ivan1993spb/http-proxy-image-retriever)
 
-http-proxy-image-retriever
+
+http-proxy-image-retriever [![Build Status](https://travis-ci.org/ivan1993spb/http-proxy-image-retriever.svg?branch=master)](https://travis-ci.org/ivan1993spb/http-proxy-image-retriever)
 ==========================
 
 http-proxy-image-retriever is small http proxy server which:
