@@ -13,6 +13,14 @@ http-proxy-image-retriever is small http proxy server which:
 
 To install run `go get -u github.com/ivan1993spb/http-proxy-image-retriever`
 
+Docker image
+------------
+
+```bash
+docker pull quay.io/ivan1993spb/http-proxy-image-retriever
+docker run --name http-proxy-image-retriever -p 8888:8888 -d quay.io/ivan1993spb/http-proxy-image-retriever
+```
+
 Testing
 -------
 
@@ -22,6 +30,6 @@ Testing
 
 Vegeta testing:
 
-```
-$ cat vegeta_targets | vegeta attack -rate=15 -workers=10 -duration=30s | tee results.bin | vegeta report
+```bash
+cat vegeta_targets | vegeta attack -rate=15 -workers=10 -duration=30s | tee results.bin | vegeta report
 ```
