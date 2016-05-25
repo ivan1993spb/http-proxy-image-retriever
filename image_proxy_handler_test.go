@@ -36,6 +36,10 @@ func TestNewImageProxyHandler(t *testing.T) {
 		w.Header().Set("Content-Type", "image/svg+xml")
 		w.Write(MustAsset("test/index/third.svg"))
 	})
+	mux.HandleFunc("/index/notimage.md", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		w.Write(MustAsset("test/index/notimage.md"))
+	})
 	mux.HandleFunc("/path/to/imgs/fifth.png", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "image/png")
 		w.Write(MustAsset("test/path/to/imgs/fifth.png"))
@@ -69,6 +73,6 @@ func TestNewImageProxyHandler(t *testing.T) {
 		io.Copy(f, w.Body)
 		f.Close()
 
-		fmt.Printf("\nPAGE WAS SAVED TO %s\n\n", TEST_RESULT_FILE_NAME)
+		fmt.Printf("\nTEST PAGE WAS SAVED TO %s\n\n", TEST_RESULT_FILE_NAME)
 	}
 }
