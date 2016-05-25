@@ -23,5 +23,5 @@ Testing
 Vegeta testing:
 
 ```
-$ cat vegeta_targets | vegeta attack -rate=50 -workers=10 -duration=30s | tee results.bin | vegeta report
+$ cat vegeta_targets | vegeta attack -rate=15 -workers=10 -duration=30s | tee results.bin | vegeta report
 ```
