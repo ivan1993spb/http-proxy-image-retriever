@@ -1,3 +1,4 @@
+GET http://localhost:8888/?url=http://upyachka.ru/
 GET http://localhost:8888/?url=https://news.yandex.ru/
 GET http://localhost:8888/?url=http://dopiaza.org/tools/datauri/examples/index.php
 GET http://localhost:8888/?url=http://4gophers.ru

@@ -19,6 +19,8 @@ Docker image
 ```bash
 docker pull quay.io/ivan1993spb/http-proxy-image-retriever
 docker run --name http-proxy-image-retriever -p 8888:8888 -d quay.io/ivan1993spb/http-proxy-image-retriever
+# test upyachka
+curl http://localhost:8888/?url=http://upyachka.ru/ > upyachka.html
 ```
 
 Testing
