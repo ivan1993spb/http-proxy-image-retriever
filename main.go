@@ -14,7 +14,7 @@ import (
 var ServerAddr string
 
 func init() {
-	flag.StringVar(&ServerAddr, "addr", "127.0.0.1:8888", "server address")
+	flag.StringVar(&ServerAddr, "addr", ":8888", "server address")
 }
 
 func main() {
