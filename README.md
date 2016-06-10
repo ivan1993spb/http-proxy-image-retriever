@@ -1,6 +1,6 @@
 
 
-http-proxy-image-retriever [![Build Status](https://travis-ci.org/ivan1993spb/http-proxy-image-retriever.svg?branch=master)](https://travis-ci.org/ivan1993spb/http-proxy-image-retriever) [![Docker Repository on Quay](https://quay.io/repository/ivan1993spb/http-proxy-image-retriever/status "Docker Repository on Quay")](https://quay.io/repository/ivan1993spb/http-proxy-image-retriever)
+http-proxy-image-retriever [![Build Status](https://travis-ci.org/ivan1993spb/http-proxy-image-retriever.svg?branch=master)](https://travis-ci.org/ivan1993spb/http-proxy-image-retriever) [![Docker Repository on Quay](https://quay.io/repository/ivan1993spb/http-proxy-image-retriever/status "Docker Repository on Quay")](https://quay.io/repository/ivan1993spb/http-proxy-image-retriever) [![GitHub release](https://img.shields.io/github/release/qubyte/rubidium.svg?maxAge=2592000)](https://github.com/ivan1993spb/http-proxy-image-retriever/releases/tag/v1.0)
 ==========================
 
 http-proxy-image-retriever is small http proxy server which:
