@@ -35,3 +35,8 @@ Vegeta testing:
 ```bash
 cat vegeta_targets | vegeta attack -rate=15 -workers=10 -duration=30s | tee results.bin | vegeta report
 ```
+
+License
+-------
+
+See [LICENSE](LICENSE).
