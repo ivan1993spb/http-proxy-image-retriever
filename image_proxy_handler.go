@@ -53,8 +53,8 @@ func (h *ImageProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	stopChan := h.getRequestStopChan(w)
 	imageURLChan, dataURLChan1, errorChan1 := h.findImagesPageURL(stopChan, URL)
 	dataURLChan2, errorChan2 := h.loadImages(stopChan, imageURLChan)
-	errorChan := MergeErrorChans(stopChan, errorChan1, errorChan2)
-	dataURLChan := MergeDataURLChans(stopChan, dataURLChan1, dataURLChan2)
+	errorChan := mergeErrorChans(stopChan, errorChan1, errorChan2)
+	dataURLChan := mergeDataURLChans(stopChan, dataURLChan1, dataURLChan2)
 
 	go func() {
 		for err := range errorChan {
@@ -87,9 +87,9 @@ func (h *ImageProxyHandler) getRequestStopChan(w http.ResponseWriter) <-chan str
 	return h.stopChan
 }
 
-type ErrFindImagesPageURL string
+type errFindImagesPageURL string
 
-func (e ErrFindImagesPageURL) Error() string {
+func (e errFindImagesPageURL) Error() string {
 	return "finding images on page error: " + string(e)
 }
 
@@ -110,13 +110,13 @@ func (h *ImageProxyHandler) findImagesPageURL(stopChan <-chan struct{}, URL *url
 		}()
 
 		if err != nil {
-			errorChan <- ErrFindImagesPageURL("loading html page error: " + err.Error())
+			errorChan <- errFindImagesPageURL("loading html page error: " + err.Error())
 			return
 		}
 
 		imgSources, err := FindImageSources(resp.Body)
 		if err != nil {
-			errorChan <- ErrFindImagesPageURL("parsing response error: " + err.Error())
+			errorChan <- errFindImagesPageURL("parsing response error: " + err.Error())
 			return
 		}
 
@@ -126,14 +126,14 @@ func (h *ImageProxyHandler) findImagesPageURL(stopChan <-chan struct{}, URL *url
 			if IsDataUrl(source) {
 				h.logger.Println("found dataurl image source")
 				if du, err := dataurl.DecodeString(source); err != nil {
-					errorChan <- ErrFindImagesPageURL("cannot decode dataurl: " + err.Error())
+					errorChan <- errFindImagesPageURL("cannot decode dataurl: " + err.Error())
 				} else {
 					dataURLChan <- du
 				}
 			} else {
 				h.logger.Println("found link image source")
 				if imageURL, err := url.Parse(source); err != nil {
-					errorChan <- ErrFindImagesPageURL("cannot parse image url: " + err.Error())
+					errorChan <- errFindImagesPageURL("cannot parse image url: " + err.Error())
 				} else {
 					imageURLChan <- resp.Request.URL.ResolveReference(imageURL)
 				}
@@ -144,9 +144,9 @@ func (h *ImageProxyHandler) findImagesPageURL(stopChan <-chan struct{}, URL *url
 	return imageURLChan, dataURLChan, errorChan
 }
 
-type ErrLoadingImage string
+type errLoadingImage string
 
-func (e ErrLoadingImage) Error() string {
+func (e errLoadingImage) Error() string {
 	return "loading image error: " + string(e)
 }
 
@@ -165,13 +165,13 @@ func (h *ImageProxyHandler) loadImages(stopChan <-chan struct{}, imageURLChan <-
 			wg.Add(1)
 			h.loader.DownloadCallback(stopChan, URL, func(resp *http.Response, err error) {
 				if err != nil {
-					errorChan <- ErrLoadingImage(err.Error())
+					errorChan <- errLoadingImage(err.Error())
 				} else if resp.StatusCode != http.StatusOK {
-					errorChan <- ErrLoadingImage("bad status code")
+					errorChan <- errLoadingImage("bad status code")
 				} else if contentType := resp.Header.Get("Content-Type"); !IsBrowserImageMIME(contentType) {
-					errorChan <- ErrLoadingImage("unexpected content-type: " + contentType)
+					errorChan <- errLoadingImage("unexpected content-type: " + contentType)
 				} else if data, err := ioutil.ReadAll(resp.Body); err != nil {
-					errorChan <- ErrLoadingImage(err.Error())
+					errorChan <- errLoadingImage(err.Error())
 				} else {
 					h.logger.Println("image loaded", contentType)
 					dataURLChan <- dataurl.New(data, contentType)
@@ -195,7 +195,7 @@ func (h *ImageProxyHandler) Stop() {
 	close(h.stopChan)
 }
 
-var ImagesPageTmpl = template.Must(template.New("images_page").Parse(`<!DOCTYPE html>
+var imagesPageTmpl = template.Must(template.New("images_page").Parse(`<!DOCTYPE html>
 <html>
     <head>
         <meta charset="utf-8">
@@ -217,7 +217,7 @@ func (h *ImageProxyHandler) imagesHTML(w http.ResponseWriter, dataURLChan <-chan
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 
-	if err := ImagesPageTmpl.Execute(w, dataURLChan); err != nil {
+	if err := imagesPageTmpl.Execute(w, dataURLChan); err != nil {
 		h.logger.Println("writing html response error:", err)
 	}
 }

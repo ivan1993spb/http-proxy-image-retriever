@@ -11,10 +11,10 @@ import (
 	"gopkg.in/tylerb/graceful.v1"
 )
 
-var ServerAddr string
+var serverAddr string
 
 func init() {
-	flag.StringVar(&ServerAddr, "addr", ":8888", "server address")
+	flag.StringVar(&serverAddr, "addr", ":8888", "server address")
 }
 
 func main() {
@@ -28,7 +28,7 @@ func main() {
 	server := &graceful.Server{
 		Timeout: time.Second,
 		Server: &http.Server{
-			Addr:    ServerAddr,
+			Addr:    serverAddr,
 			Handler: MiddlewareCheckRequest(handler, logger),
 		},
 		Logger: logger,

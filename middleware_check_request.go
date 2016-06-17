@@ -6,6 +6,7 @@ import (
 	"net/url"
 )
 
+// MiddlewareCheckRequest creates middleware for request verifying
 func MiddlewareCheckRequest(next http.Handler, logger *log.Logger) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logger.Println("accepted request")
